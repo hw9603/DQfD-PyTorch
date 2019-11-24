@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 class Net(nn.Module):
     def __init__(self):
@@ -79,13 +80,18 @@ class ValueCalculator2:
     def calcQ(self, net, s, A):
         # 1.single state, one or multiple actions
         # 2.muliplte states, one action per state, s must be a list of tensors
-        if isinstance(s, torch.Tensor) and s.dim() == 1:  # situation 1
-            return torch.Tensor([net(s)[a] for a in A]).squeeze()
+        # TODO: CHANGE s.dim()
+        if isinstance(s, torch.Tensor) and s.dim() == 4:  # situation 1
+            return torch.Tensor([net(s)[a] for a in A])
 
         if not isinstance(s, torch.Tensor):  # situation 2
             s = torch.stack(s)
+            # TODO: ADD THE LINE HERE!!
+            s = s.squeeze(1)
+
             Q = net(s)
             A = [a[0] for a in A]
+            # TODO: DID I CHANGE HERE? (squeeze?)
             return Q[[i for i in range(len(A))], A]
 
     def sortedA(self, state):

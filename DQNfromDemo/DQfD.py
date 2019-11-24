@@ -41,6 +41,7 @@ class DeepQL:
         self.lambda3 = lambda3  # L2
         self.replay.e = 0
         self.demoReplay = ddict(list)
+        self.Jloss = 0
 
     def act(self, state):
         state = torch.Tensor(state)
@@ -103,7 +104,9 @@ class DeepQL:
             if (Q + self.margin) < QE:
                 continue
             else:
-                loss += (Q - QE)
+                # TODO: CHANGE HERE!!
+                # loss += (Q - QE)
+                loss += (Q - QE)[0]
                 count += 1
         return loss / count if count != 0 else loss
 
@@ -128,7 +131,9 @@ class DeepQL:
                 self.vc.targetNet, ns_,
                 maxA)
             predict = Qpredict[i]
-            loss += (target - predict) ** 2
+            # TODO: CHANGE HERE!
+            # loss += (target- predict) ** 2
+            loss += (target - predict)[0] ** 2
         return loss / count
 
     def update(self):
@@ -144,6 +149,7 @@ class DeepQL:
         JE = self.JE(samples)
         Jn = self.Jn(samples,Qpredict)
         J = Jtd + self.lambda2 * JE + self.lambda1 * Jn
+        self.Jloss = J.data.item()
         J.backward()
         self.opt.step()
 

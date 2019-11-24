@@ -15,6 +15,7 @@ import torch.nn.functional as F
 from DQNwithNoisyNet.NoisyLayer import NoisyLinear
 from DQNfromDemo import DQfD
 import json
+from tensorboardX import SummaryWriter
 
 
 def plotJE(dqn,color):
@@ -103,6 +104,7 @@ if __name__ == "__main__":
     total = 0
     count = 0  # successful count
     start = 0
+    # writer = SummaryWriter('logs/CartPole')
     with open("CartPoleDemo.txt", "r") as file:
         data = json.load(file)
         for k, v in data.items():
@@ -116,14 +118,22 @@ if __name__ == "__main__":
             print("pretraining:", i)
         dqn.update()
 
+    print("Save the model...")
+    torch.save(dqn.vc.predictNet.state_dict(), "./CartPolePredict.txt")
+    torch.save(dqn.vc.targetNet.state_dict(), "./CartPoleTarget.txt")
+
     for i in range(epoch):
         print(i)
+        if i % 10 == 0:
+            print("Save the model...")
+            torch.save(dqn.vc.predictNet.state_dict(), "./CartPolePredict.txt")
+            torch.save(dqn.vc.targetNet.state_dict(), "./CartPoleTarget.txt")
         dqn.eps = 1 - N * math.exp(-lam * i)
         dqn.eps = 0.9
         count = count + 1 if total >= 500 else 0
-        if count >= 2:
-            dqn.eps = 1
-            break
+        # if count >= 2:
+        #     dqn.eps = 1
+        #     break
         total = 0
         while True:
             a = dqn.act(s)
@@ -138,8 +148,16 @@ if __name__ == "__main__":
                 print('total:', total)
                 process.append(total)
                 break
+    with open('CartPoleScores.txt', 'w') as f:
+        for s in process:
+            f.write("%s\n" % s)
+    plt.plot(range(epoch), process)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.savefig('CartPoleScore.jpg')
 
-    plt.show()
+    dqn.vc.predictNet.load_state_dict(torch.load("./CartPolePredict.txt"))
+    dqn.vc.targetNet.load_state_dict(torch.load("./CartPoleTarget.txt"))
     total = 0
     s = env.reset()
     dqn.eps = 1

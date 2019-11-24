@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="1bde0d09-7bf8-47ce-a3cf-c0eb8eb7cfc6" name="Capstone-EC2" url="http://ec2-18-223-132-66.us-east-2.compute.amazonaws.com">
+        <fileTransfer host="ec2-18-223-132-66.us-east-2.compute.amazonaws.com" port="22" privateKey="$USER_HOME$/.ssh/awswh.pem" rootFolder="/home/ubuntu" accessType="SFTP" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
