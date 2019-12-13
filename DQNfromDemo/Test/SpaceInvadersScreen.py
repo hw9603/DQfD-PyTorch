@@ -23,6 +23,7 @@ from skimage import transform # Help us to preprocess the frames
 from skimage.color import rgb2gray # Help us to gray our frames
 import json
 from PIL import Image
+import time
 
 def plotJE(dqn,color):
     tree=dqn.replay.tree
@@ -109,12 +110,12 @@ class ConvNet(nn.Module):
 
 def write_game_record(game_record, filename):
     with open(filename, 'w') as f:
-        f.write("frame\treward\tscore\tterminal\taction\tram_state\n")
+        f.write("frame\treward\tscore\tterminal\taction\n")
         for record in game_record:
             line = ""
             for i, ent in enumerate(record):
-                if i == 5:
-                    line += str(list(ent)) + "\n"
+                if i == 4:
+                    line += str(ent) + "\n"
                     # print(line)
                 else:
                     line += str(ent) + "\t"
@@ -137,6 +138,9 @@ def preprocess_frame(frame):
     preprocessed_frame = transform.resize(normalized_frame, [84, 84])
     permute_preprocessed_frame = torch.from_numpy(preprocessed_frame).unsqueeze(0).permute(0,3,1,2).float()
     return permute_preprocessed_frame  # 110x84x1 frame
+
+
+log_file_name = "SI_screens/SIPreLoss.txt"
 
 if __name__ == "__main__":
     env = gym.make('SpaceInvaders-v0')
@@ -173,67 +177,90 @@ if __name__ == "__main__":
     #
     # dqn.replay.tree.start = start
     # loss = 0
+    # # with open(log_file_name, 'a') as f:
+    # #     f.write("[" + str(time.time()) + "]\t" + "Pre-train:\n")
+    #
     # for i in range(100):
     #     loss += dqn.Jloss
     #     if i % 10 == 0:
     #         print(loss / 10)
+    #         # with open(log_file_name, 'a') as f:
+    #         #     f.write(str(i) + ":\t" + str(loss / 10) + "\n")
     #         loss = 0
     #         print("pretraining:", i)
-    #         print("Save the model...")
-    #         torch.save(dqn.vc.predictNet.state_dict(), "SI_screens/SIPrePredict.txt")
-    #         torch.save(dqn.vc.targetNet.state_dict(), "SI_screens/SIPreTarget.txt")
+    #         # print("Save the model...")
+    #         # torch.save(dqn.vc.predictNet.state_dict(), "SI_screens/SIPrePredict2-" + str(i) + ".txt")
+    #         # torch.save(dqn.vc.targetNet.state_dict(), "SI_screens/SIPreTarget2-" + str(i) + ".txt")
     #     try:
     #         dqn.update()
     #     except:
     #         print("uh-oh")
     #         continue
     #
-    # # dqn.vc.predictNet.load_state_dict(torch.load("./SIPrePredict330.txt"))
-    # # dqn.vc.targetNet.load_state_dict(torch.load("./SIPreTarget330.txt"))
+    # # dqn.vc.predictNet.load_state_dict(torch.load("SI_screens/SIPrePredict2-290.txt"))
+    # # dqn.vc.targetNet.load_state_dict(torch.load("SI_screens/SIPreTarget2-290.txt"))
     #
-    for i in range(epoch):
-        print(i)
-        # if i % 10 == 0:
-        #     print("Save the model...")
-        #     torch.save(dqn.vc.predictNet.state_dict(), "./SpaceInvadersPredict.txt")
-        #     torch.save(dqn.vc.targetNet.state_dict(), "./SpaceInvadersTarget.txt")
-        dqn.eps = 1 - N * math.exp(-lam * i)
-        dqn.eps = 0.9
-        total = 0
-        lives = 3
-        steps = 0
-        while True:
-            if steps % 10 == 0:
-                print("step: ", steps)
-            a = dqn.act(s)
-            s_, r, done, info = env.step(a[0])
-            s_ = preprocess_frame(s_)
-            # print("s_:", s_.shape)
-            total += r
-            if info['ale.lives'] < lives:
-                r = -10
-                lives = info['ale.lives']
-            dqn.storeTransition(s, a, r, s_, done)
-            try:
-                dqn.update()
-            except:
-                print("uh-oh again")
-                continue
-            s = s_
-            steps += 1
-            if done:
-                s = env.reset()
-                s = preprocess_frame(s)
-                print('total:', total)
-                process.append(total)
-                break
-        torch.save(dqn.vc.predictNet.state_dict(), "SI_screens/SIPredict.txt")
-        torch.save(dqn.vc.targetNet.state_dict(), "SI_screens/SITarget.txt")
+    # with open(log_file_name, 'a') as f:
+    #     f.write("[" + str(time.time()) + "]\t" + "Self-train:\n")
+    #
+    # loss = 0
+    # for i in range(epoch):
+    #     print(i)
+    #     with open(log_file_name, 'a') as f:
+    #         f.write("[" + str(time.time()) + "]:\tRound " + str(i) + "\n")
+    #     # if i % 10 == 0:
+    #     #     print("Save the model...")
+    #     #     torch.save(dqn.vc.predictNet.state_dict(), "./SpaceInvadersPredict.txt")
+    #     #     torch.save(dqn.vc.targetNet.state_dict(), "./SpaceInvadersTarget.txt")
+    #     dqn.eps = 1 - N * math.exp(-lam * i)
+    #     dqn.eps = 0.9
+    #     total = 0
+    #     lives = 3
+    #     steps = 0
+    #     while True:
+    #         loss += dqn.Jloss
+    #         print(dqn.Jloss)
+    #         if steps % 10 == 0:
+    #             if steps % 100 == 0:
+    #                 torch.save(dqn.vc.predictNet.state_dict(), "SI_screens/SIPredict2-" + str(steps) + ".txt")
+    #                 torch.save(dqn.vc.targetNet.state_dict(), "SI_screens/SITarget2-" + str(steps) + ".txt")
+    #             print("step: ", steps, "\tloss: ", loss / 10)
+    #             with open(log_file_name, 'a') as f:
+    #                 f.write(str(steps) + ":\t" + str(loss / 10) + "\n")
+    #             loss = 0
+    #         a = dqn.act(s)
+    #         s_, r, done, info = env.step(a[0])
+    #         s_ = preprocess_frame(s_)
+    #         # print("s_:", s_.shape)
+    #         total += r
+    #         if info['ale.lives'] < lives:
+    #             r = -10
+    #             lives = info['ale.lives']
+    #         dqn.storeTransition(s, a, r, s_, done)
+    #         try:
+    #             dqn.update()
+    #         except:
+    #             print("uh-oh again")
+    #             continue
+    #         s = s_
+    #         steps += 1
+    #         if done:
+    #             s = env.reset()
+    #             s = preprocess_frame(s)
+    #             print('total:', total)
+    #             with open(log_file_name, 'a') as f:
+    #                 f.write("Game finished. Total Score:\t" + str(total))
+    #             process.append(total)
+    #             break
+    #     torch.save(dqn.vc.predictNet.state_dict(), "SI_screens/SIPredict2.txt")
+    #     torch.save(dqn.vc.targetNet.state_dict(), "SI_screens/SITarget2.txt")
+    #
+    # with open('SI_screens/SIScores.txt', 'w') as f:
+    #     for s in process:
+    #         f.write("%s\n" % s)
 
-    with open('SI_screens/SIScores.txt', 'w') as f:
-        for s in process:
-            f.write("%s\n" % s)
-
+    dqn.vc.predictNet.load_state_dict(torch.load("SI_screens/SIPrePredict2-90.txt"))
+    dqn.vc.targetNet.load_state_dict(torch.load("SI_screens/SIPreTarget2-90.txt"))
     # dqn.vc.predictNet.load_state_dict(torch.load("SI_screens/SIPrePredict.txt"))
     # dqn.vc.targetNet.load_state_dict(torch.load("SI_screens/SIPreTarget.txt"))
 
@@ -262,7 +289,7 @@ if __name__ == "__main__":
         # a = random.choices([1, 3, 4], [0.5, 0.4, 0.1])
         s, r, done, _ = env.step(a)
         s = preprocess_frame(s)
-        game_record.append([frame, r, total, done, a, s])
+        game_record.append([frame, r, total, done, a])
         total += r
         frame += 1
         env.render()
@@ -273,7 +300,7 @@ if __name__ == "__main__":
             print("Score: " + str(total) + "    Avg: " + str(avg_score))
             if total > 200:
                 write_count += 1
-                write_game_record(game_record, "SI_screens/" + str(rounds) + "-" + str(total) + ".txt")
+                write_game_record(game_record, "SI_screens/" + str(rounds) + "-" + str(total) + "-full-noscreen.txt")
             total = 0
             frame = 0
             game_record = []
